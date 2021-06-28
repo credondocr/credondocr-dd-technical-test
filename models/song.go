@@ -2,6 +2,7 @@ package models
 
 import (
 	"credondocr-dd-technical-test/utils"
+	"fmt"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -41,43 +42,38 @@ func FindSongs(c *gin.Context, from time.Time, to time.Time, artist string) ([]S
 	return songs, nil
 }
 
-func GetResult(c *gin.Context, from time.Time, to time.Time, artist string) ([]utils.Data, error) {
-	db := c.MustGet("db").(*gorm.DB)
+func GetResult(db *gorm.DB, from time.Time, to time.Time, artist string) ([]utils.Data, error) {
 	var results = []utils.Data{}
-	if artist == "" {
-		sql := `
+	sql := `
 		SELECT to_char(DATE (release_at)::date, 'YYYY-MM-DD') release_at, json_agg(json_build_object('name', name,'artist', artist)) Songs
 			FROM songs
-			where release_at between ? and ?  AND requested_at <= now() + INTERVAL '30 DAYS' 
-			group by release_at 
-			order by  release_at`
-
-		_ = db.Raw(sql, from, to).Scan(&results).Error
-	} else {
-		sql := `
-		SELECT to_char(DATE (release_at)::date, 'YYYY-MM-DD') release_at, json_agg(json_build_object('name', name,'artist', artist)) Songs
-			FROM songs
-			where release_at between ? and ?  AND requested_at <= now() + INTERVAL '30 DAYS' and artist = ?
-			group by release_at 
-			order by  release_at`
-		_ = db.Raw(sql, from, to, artist).Scan(&results).Error
+			where release_at between ? and ?  
+			AND requested_at <= now() + INTERVAL '30 DAYS' `
+	if artist != "" {
+		sql = sql + `and artist = ? `
+	}
+	sql = sql + `group by release_at order by  release_at`
+	fmt.Println(sql)
+	err := db.Raw(sql, from, to, artist).Scan(&results)
+	fmt.Printf("%#v\n", err)
+	fmt.Println("paso por aqui")
+	if err != nil {
+		fmt.Println(err)
 	}
 	return results, nil
 }
 
-func CreateSongs(c *gin.Context, songs []Song) ([]Song, error) {
-	db := c.MustGet("db").(*gorm.DB)
+func CreateSongs(db *gorm.DB, songs []Song) ([]Song, error) {
 	if err := db.Create(&songs).Error; err != nil {
 		return nil, err
 	}
 	return songs, nil
 }
 
-func GetValidDays(c *gin.Context, from time.Time, to time.Time) ([]string, error) {
-	db := c.MustGet("db").(*gorm.DB)
-	var validDates []string
-	if err := db.Raw("select to_char(DATE (release_at)::date, 'YYYY-MM-DD') from songs where release_at between ? and ? and requested_at <= now() + INTERVAL '30 DAYS'  group by release_at", from, to).Scan(&validDates).Error; err != nil {
+func GetRequestedDays(db *gorm.DB, from time.Time, to time.Time) ([]string, error) {
+	var requestedDates []string
+	if err := db.Raw("select to_char(DATE (release_at)::date, 'YYYY-MM-DD') from songs where release_at between ? and ? and requested_at <= now() + INTERVAL '30 DAYS'  group by release_at", from, to).Scan(&requestedDates).Error; err != nil {
 		return nil, err
 	}
-	return validDates, nil
+	return requestedDates, nil
 }

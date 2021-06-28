@@ -4,6 +4,7 @@ import (
 	"credondocr-dd-technical-test/models"
 	"credondocr-dd-technical-test/services"
 	"credondocr-dd-technical-test/utils"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -11,6 +12,7 @@ import (
 	"github.com/drgrib/iter"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
+	"gorm.io/gorm"
 )
 
 type ReleaseController struct{}
@@ -22,21 +24,28 @@ type Params struct {
 }
 
 func (h ReleaseController) Releases(c *gin.Context) {
-
-	var b Params
-	if err := c.ShouldBindWith(&b, binding.Query); err == nil {
-		// if time.Parse("2006-01-02", b.From).After("2006-01-02", time.Parse(b.Until)) {
-		// 	c.JSON(http.StatusOK, gin.H{"error": "Invalid dates, please check the params"})
-		// 	return
-		// }
-		from, _ := time.Parse("2006-01-02", strings.ReplaceAll(string(b.From), "\"", ""))
-		until, _ := time.Parse("2006-01-02", strings.ReplaceAll(string(b.Until), "\"", ""))
-		validDates, _ := models.GetValidDays(c, from, until)
-
-		daysToProcess := utils.GetDaysNotRequested(from, until, validDates)
+	db := c.MustGet("db").(*gorm.DB)
+	var p Params
+	if err := c.ShouldBindWith(&p, binding.Query); err == nil {
+		from, err := time.Parse("2006-01-02", strings.ReplaceAll(string(p.From), "\"", ""))
+		if err != nil {
+			c.JSON(http.StatusOK, gin.H{"error": "Invalid from dates, please check the params"})
+			return
+		}
+		until, err := time.Parse("2006-01-02", strings.ReplaceAll(string(p.Until), "\"", ""))
+		if err != nil {
+			c.JSON(http.StatusOK, gin.H{"error": "Invalid until dates, please check the params"})
+			return
+		}
+		if from.After(until) {
+			c.JSON(http.StatusOK, gin.H{"error": "Invalid dates, please check the params"})
+			return
+		}
+		requestedDates, _ := models.GetRequestedDays(db, from, until)
+		daysToProcess := utils.GetDaysNotRequested(from, until, requestedDates)
 
 		if len(daysToProcess) < 25 {
-			services.FetchByDay(c, daysToProcess)
+			services.FetchByDay(db, daysToProcess)
 		} else {
 			f := utils.GetMonthsCountSince(from, until)
 			for range iter.N(f + 1) {
@@ -46,24 +55,25 @@ func (h ReleaseController) Releases(c *gin.Context) {
 				}
 				if from.AddDate(0, 1, d-1).After(until) {
 					if utils.GetDaysCountSince(from, until) > 25 {
-						services.FetchByMonth(c, from)
+						services.FetchByMonth(db, from)
 					} else {
-						validDates, _ := models.GetValidDays(c, from, until)
-						services.FetchByDay(c, utils.GetDaysNotRequested(from, until, validDates))
+						requestedDates, _ := models.GetRequestedDays(db, from, until)
+						services.FetchByDay(db, utils.GetDaysNotRequested(from, until, requestedDates))
 					}
 				} else {
 					if utils.GetDaysCountSince(from, from.AddDate(0, 1, d-1)) > 25 {
-						services.FetchByMonth(c, from)
+						services.FetchByMonth(db, from)
 					} else {
-						validDates, _ := models.GetValidDays(c, from, until)
-						services.FetchByDay(c, utils.GetDaysNotRequested(from, from.AddDate(0, 1, d-1), validDates))
+						requestedDates, _ := models.GetRequestedDays(db, from, until)
+						services.FetchByDay(db, utils.GetDaysNotRequested(from, from.AddDate(0, 1, d-1), requestedDates))
 					}
 				}
 				from = from.AddDate(0, 1, d)
 			}
 		}
-
-		result, _ := models.GetResult(c, from, until, b.Artist)
+		// time.Sleep(time.Duration(15 * time.Second))
+		result, _ := models.GetResult(c.MustGet("db").(*gorm.DB), from, until, p.Artist)
+		fmt.Println(result)
 		c.JSON(http.StatusOK, result)
 	} else {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})

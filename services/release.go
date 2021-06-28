@@ -8,17 +8,18 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm/dialects/postgres"
 	"gorm.io/datatypes"
+	"gorm.io/gorm"
 )
 
-func FetchByDay(c *gin.Context, daysToProcess []string) {
+func FetchByDay(db *gorm.DB, daysToProcess []string) {
 	var waitgroup sync.WaitGroup
 	waitgroup.Add(len(daysToProcess))
 	for _, d := range daysToProcess {
 		go func(day string) {
 			res, err := GetSingleDay(day)
+			fmt.Println("request day ", day)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -29,7 +30,7 @@ func FetchByDay(c *gin.Context, daysToProcess []string) {
 				s := models.Song{Name: row.Name, ReleaseAt: datatypes.Date(row.ReleaseAt.Time), RequestedAt: datatypes.Date(time.Now()), Duration: row.Duration, Artist: row.Artist, MetaData: metadata}
 				incomingSongs = append(incomingSongs, s)
 			}
-			_, err = models.CreateSongs(c, incomingSongs)
+			_, err = models.CreateSongs(db, incomingSongs)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -39,8 +40,7 @@ func FetchByDay(c *gin.Context, daysToProcess []string) {
 	waitgroup.Wait()
 }
 
-func FetchByMonth(c *gin.Context, from time.Time) {
-
+func FetchByMonth(db *gorm.DB, from time.Time) {
 	var waitgroup sync.WaitGroup
 	waitgroup.Add(1)
 	go func() {
@@ -56,7 +56,7 @@ func FetchByMonth(c *gin.Context, from time.Time) {
 			s := models.Song{Name: row.Name, ReleaseAt: datatypes.Date(row.ReleaseAt.Time), RequestedAt: datatypes.Date(time.Now()), Duration: row.Duration, Artist: row.Artist, MetaData: metadata}
 			incomingSongs = append(incomingSongs, s)
 		}
-		_, err = models.CreateSongs(c, incomingSongs)
+		_, err = models.CreateSongs(db, incomingSongs)
 		if err != nil {
 			log.Fatal(err)
 		}

@@ -43,7 +43,6 @@ func GetSingleDay(date string) ([]Data, error) {
 	config := config.GetConfig()
 	resp, err := http.Get(fmt.Sprintf("%s/daily?api_key=ec093dd5-bbe3-4d8e-bdac-314b40afb796&released_at=%s", config.GetString("provider.uri"), date))
 	if err != nil {
-		fmt.Print(err.Error())
 		return nil, err
 	}
 
@@ -62,11 +61,9 @@ func GetSingleDay(date string) ([]Data, error) {
 }
 
 func GetMonth(from time.Time) ([]Data, error) {
-	fmt.Println("Request", from.Format("2006-01"))
 	config := config.GetConfig()
 	resp, err := http.Get(fmt.Sprintf("%s/monthly?api_key=ec093dd5-bbe3-4d8e-bdac-314b40afb796&released_at=%s", config.GetString("provider.uri"), from.Format("2006-01")))
 	if err != nil {
-		fmt.Print(err.Error())
 		return nil, err
 	}
 
