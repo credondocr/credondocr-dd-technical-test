@@ -19,6 +19,76 @@ The application not need any migration or initial script, everything is ready ou
 If you want to make some code changes, please recreate the orquestation with:
 `docker-compose up --build --force-recreate`
 
+## Running the application
+This application run at port 8080 of localhost and and query the API via  the url:
+
+`http://localhost:8080/releases`
+
+**Please make sure that port 8080 is available on your machine.**
+
+##Parameters
+-  The from and until param are required
+-  The from and until param are string date with format yyyy-mm-dd
+-  The artist param is not required
+-  The order does not matter
+
+
+## Example Request
+
+**Request**
+`GET http://localhost:8080/releases?until=2021-01-01&from=2021-01-01`
+
+```
+[
+    {
+        "release_at": "2021-01-01",
+        "songs": [
+            {
+                "name": "Happy New Year 2021 - Instrumental",
+                "artist": "Titobeats"
+            },
+            {
+                "name": "Suave Moods for 2021",
+                "artist": "Relaxing Piano Music Girl"
+            },
+            {
+                "name": "Little Donkey",
+                "artist": "Christmas 2019"
+            },
+            {
+                "name": "Uplifting Ambiance for 2021",
+                "artist": "Coffee House Smooth Jazz Playlist"
+            },
+            {
+                "name": "Friendly New Years Resolutions",
+                "artist": "Peaceful Autumn Instrumental Jazz"
+            },
+            {
+                "name": "You Are Not Alone",
+                "artist": "Krezip"
+            },
+            {
+                "name": "I Saw Three Ships",
+                "artist": "Christmas 2019"
+            },
+            {
+                "name": "New Years 2021",
+                "artist": "Cowboy Nemo"
+            },
+            {
+                "name": "Sine moj (Live)",
+                "artist": "Roksana"
+            },
+            {
+                "name": "We Three Kings",
+                "artist": "Christmas 2019"
+            }
+        ]
+    }
+]
+```
+-  
+
 ## Architecture
 ![](https://i.imgur.com/Wdv8do7.png)
 ## Workflow
