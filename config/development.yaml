@@ -1,0 +1,12 @@
+server:
+  port: 8080
+database:
+  host: postgres
+  user: root
+  password: password
+  name: postgres
+  port: 5432
+api:
+  base: api
+provider:
+  uri: https://de-challenge.ltvco.com/v1/songs/
