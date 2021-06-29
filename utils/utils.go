@@ -1,15 +1,16 @@
 package utils
 
 import (
+	"strings"
 	"time"
-
-	"gorm.io/datatypes"
 )
 
-func GetDaysCountSince(from time.Time, to time.Time) int {
+const DefaultLayout = "2006-01-02"
+
+func GetDaysCountSince(from time.Time, until time.Time) int {
 	days := 0
 	day := from.Day()
-	for from.Before(to) {
+	for from.Before(until) {
 		from = from.Add(time.Hour * 24)
 		nextDay := from.Day()
 		if nextDay != day {
@@ -20,13 +21,13 @@ func GetDaysCountSince(from time.Time, to time.Time) int {
 	return days
 }
 
-func GetDaysNotRequested(from time.Time, to time.Time, requested []string) []string {
+func GetDaysNotRequested(from time.Time, until time.Time, requested []string) []string {
 	days := 0
 	day := from.Day()
 	notRequested := []string{}
-	for from.Format("2006-01-02") == to.Format("2006-01-02") || from.Before(to) {
-		if !Contains(requested, from.Format("2006-01-02")) {
-			notRequested = append(notRequested, from.Format("2006-01-02"))
+	for from.Format(DefaultLayout) == until.Format(DefaultLayout) || from.Before(until) {
+		if !Contains(requested, from.Format(DefaultLayout)) {
+			notRequested = append(notRequested, from.Format(DefaultLayout))
 		}
 		from = from.Add(time.Hour * 24)
 		nextDay := from.Day()
@@ -38,10 +39,10 @@ func GetDaysNotRequested(from time.Time, to time.Time, requested []string) []str
 	return notRequested
 }
 
-func GetMonthsCountSince(from time.Time, to time.Time) int {
+func GetMonthsCountSince(from time.Time, until time.Time) int {
 	months := 0
 	month := from.Month()
-	for from.Before(to) {
+	for from.Before(until) {
 		from = from.Add(time.Hour * 24)
 		nextMonth := from.Month()
 		if nextMonth != month {
@@ -62,12 +63,23 @@ func Contains(s []string, str string) bool {
 	return false
 }
 
-type Data struct {
-	ReleaseAt string         `json:"release_at"`
-	Songs     datatypes.JSON `sql:"type:json" grom:"-" json:"songs"`
+func ParseStringToDate(date string) (time.Time, error) {
+	timeParsed, err := time.Parse(DefaultLayout, strings.ReplaceAll(string(date), "\"", ""))
+	if err != nil {
+		return time.Now(), err
+	}
+	return timeParsed, nil
 }
 
-type Song struct {
-	Artist string `json:"artist"`
-	Name   string `json:"name"`
+type CustomTime struct {
+	time.Time
+}
+
+func (c *CustomTime) UnmarshalJSON(v []byte) error {
+	var err error
+	c.Time, err = time.Parse(DefaultLayout, strings.ReplaceAll(string(v), "\"", ""))
+	if err != nil {
+		return err
+	}
+	return nil
 }
