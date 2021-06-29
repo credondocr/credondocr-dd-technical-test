@@ -77,14 +77,19 @@ func requestDays(db *gorm.DB, daysToProcess []string) {
 			}
 			incomingSongs := []models.Song{}
 			for _, row := range res {
-				e, _ := json.Marshal(row.Stats)
+				e, err := json.Marshal(row.Stats)
+				if err != nil {
+					log.Println(err)
+				}
 				metadata := postgres.Jsonb{e}
 				s := models.Song{ExternalId: row.SongId, Name: row.Name, ReleaseAt: datatypes.Date(row.ReleaseAt.Time), RequestedAt: datatypes.Date(time.Now()), Duration: row.Duration, Artist: row.Artist, MetaData: metadata}
 				incomingSongs = append(incomingSongs, s)
 			}
-			_, err = models.StoreSongsIntoDatabase(db, incomingSongs)
-			if err != nil {
-				log.Fatal(err)
+			if len(incomingSongs) > 0 {
+				_, err = models.StoreSongsIntoDatabase(db, incomingSongs)
+				if err != nil {
+					log.Println(err)
+				}
 			}
 			waitgroup.Done()
 		}(d)
@@ -98,19 +103,24 @@ func requestMonth(db *gorm.DB, from time.Time) {
 	go func() {
 		res, err := getMonthRequest(from)
 		if err != nil {
-			log.Fatal(err)
+			log.Println(err)
 		}
 		log.Println("request month ", from)
 		incomingSongs := []models.Song{}
 		for _, row := range res {
-			e, _ := json.Marshal(row.Stats)
+			e, err := json.Marshal(row.Stats)
+			if err != nil {
+				log.Println(err)
+			}
 			metadata := postgres.Jsonb{e}
 			s := models.Song{Name: row.Name, ReleaseAt: datatypes.Date(row.ReleaseAt.Time), RequestedAt: datatypes.Date(time.Now()), Duration: row.Duration, Artist: row.Artist, MetaData: metadata}
 			incomingSongs = append(incomingSongs, s)
 		}
-		_, err = models.StoreSongsIntoDatabase(db, incomingSongs)
-		if err != nil {
-			log.Fatal(err)
+		if len(incomingSongs) > 0 {
+			_, err = models.StoreSongsIntoDatabase(db, incomingSongs)
+			if err != nil {
+				log.Println(err)
+			}
 		}
 		waitgroup.Done()
 	}()

@@ -18,44 +18,44 @@ func (h ReleaseController) Releases(c *gin.Context) {
 	var p dtos.Params
 
 	if err := c.ShouldBindWith(&p, binding.Query); err != nil {
-		triggerDefaultError(c, err, err.Error())
+		triggerDefaultError(c, err.Error())
 		return
 	}
 
 	from, err := utils.ParseStringToDate(p.From)
 
 	if err != nil {
-		triggerDefaultError(c, err, "Invalid from dates, please check the params")
+		triggerDefaultError(c, "Invalid from dates, please check the params")
 		return
 	}
 
 	until, err := utils.ParseStringToDate(p.Until)
 
 	if err != nil {
-		triggerDefaultError(c, err, "Invalid until dates, please check the params")
+		triggerDefaultError(c, "Invalid until dates, please check the params")
 		return
 	}
-	if from.After(until) {
-		triggerDefaultError(c, err, "Invalid dates, please check the params")
+
+	if from.After(until) || until.Before(from) {
+		triggerDefaultError(c, "Invalid dates, please check the params")
 		return
 	}
 
 	if err := services.ProcessDataToDataBase(db, from, until); err != nil {
-		triggerDefaultError(c, err, "Error reading the database")
+		triggerDefaultError(c, "Error reading the database")
+		return
 	}
 
 	result, err := services.ReadDataFromDatabase(db, p)
 
 	if err != nil {
-		triggerDefaultError(c, err, "Error reading the database")
+		triggerDefaultError(c, "Error reading the database")
 		return
 	}
 
 	c.JSON(http.StatusOK, result)
 }
 
-func triggerDefaultError(c *gin.Context, err error, message string) {
-	if err != nil {
-		c.JSON(http.StatusOK, gin.H{"error": message})
-	}
+func triggerDefaultError(c *gin.Context, message string) {
+	c.JSON(http.StatusBadRequest, gin.H{"error": message})
 }

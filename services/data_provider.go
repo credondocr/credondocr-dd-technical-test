@@ -78,7 +78,7 @@ func getMonthRequest(from time.Time) ([]Data, error) {
 	requested := []Data{}
 	jsonErr := json.Unmarshal(body, &requested)
 	if jsonErr != nil {
-		log.Fatal(jsonErr)
+		log.Println(jsonErr)
 	}
 	return requested, nil
 }

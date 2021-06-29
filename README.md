@@ -16,7 +16,8 @@ In order tu setup and run the application just use the following commands:
 
 The application not need any migration or initial script, everything is ready out of the box using docker
 
-If you want to make some code changes, please recreate the orquestation with `docker-compose up --build --force-recreate`
+If you want to make some code changes, please recreate the orquestation with:
+`docker-compose up --build --force-recreate`
 
 ## Architecture
 ![](https://i.imgur.com/Wdv8do7.png)
