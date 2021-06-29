@@ -26,7 +26,7 @@ This application run at port 8080 of localhost and and query the API via  the ur
 
 **Please make sure that port 8080 is available on your machine.**
 
-##Parameters
+## Parameters
 -  The from and until param are required
 -  The from and until param are string date with format yyyy-mm-dd
 -  The artist param is not required
@@ -86,8 +86,7 @@ This application run at port 8080 of localhost and and query the API via  the ur
         ]
     }
 ]
-```
--  
+``` 
 
 ## Architecture
 ![](https://i.imgur.com/Wdv8do7.png)
